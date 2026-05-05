@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'basededados.dart';
 
 // =====================================================
 // LOGIN SCREEN
@@ -47,15 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Credenciais de teste (sem base de dados)
-  static const Map<String, Map<String, String>> _credenciaisTeste = {
-    'Cliente':       {'utilizador': 'cliente',   'password': '1234'},
-    'Empregado':     {'utilizador': 'empregado',  'password': '1234'},
-    'Cozinha':       {'utilizador': 'cozinha',    'password': '1234'},
-    'Administrador': {'utilizador': 'admin',      'password': '1234'},
-  };
-
-  void _fazerLogin() {
+  Future<void> _fazerLogin() async {
     final utilizador = _utilizadorController.text.trim();
     final password   = _passwordController.text.trim();
 
@@ -68,10 +61,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final credenciais = _credenciaisTeste[_perfilSelecionado];
-    if (credenciais == null ||
-        utilizador != credenciais['utilizador'] ||
-        password   != credenciais['password']) {
+    // --- AUTENTICAÇÃO REAL COM A BASE DE DADOS ---
+    final bd = Basededados();
+    final user = await bd.autenticar(utilizador, password);
+
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFF8B1A1A),
@@ -84,18 +78,37 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // Verificar se o perfil selecionado no UI corresponde ao perfil na BD
+    // (Por exemplo, se escolher "Admin" mas fizer login com conta de "Cliente")
+    final perfilBD = user['perfil'].toString().toLowerCase();
+    final perfilUI = _perfilSelecionado.toLowerCase();
+
+    if (perfilBD != perfilUI) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange[800],
+          content: Text(
+            'Este utilizador não tem perfil de $_perfilSelecionado.',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Navegação baseada no perfil, passando os dados do utilizador
     switch (_perfilSelecionado) {
       case 'Cliente':
-        Navigator.pushReplacementNamed(context, '/cliente');
+        Navigator.pushReplacementNamed(context, '/cliente', arguments: user);
         break;
       case 'Empregado':
-        Navigator.pushReplacementNamed(context, '/empregado');
+        Navigator.pushReplacementNamed(context, '/empregado', arguments: user);
         break;
       case 'Cozinha':
-        Navigator.pushReplacementNamed(context, '/cozinha');
+        Navigator.pushReplacementNamed(context, '/cozinha', arguments: user);
         break;
       case 'Administrador':
-        Navigator.pushReplacementNamed(context, '/admin');
+        Navigator.pushReplacementNamed(context, '/admin', arguments: user);
         break;
     }
   }

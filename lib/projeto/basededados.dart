@@ -31,9 +31,20 @@ class Basededados {
     String path = join(await getDatabasesPath(), 'mesaemesa.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  // Se a versão mudar, apagamos tudo e recriamos (apenas para desenvolvimento)
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await db.execute('DROP TABLE IF EXISTS pedido_pratos');
+    await db.execute('DROP TABLE IF EXISTS pedidos');
+    await db.execute('DROP TABLE IF EXISTS pratos');
+    await db.execute('DROP TABLE IF EXISTS mesas');
+    await db.execute('DROP TABLE IF EXISTS utilizadores');
+    await _onCreate(db, newVersion);
   }
 
   // =====================================================
@@ -49,7 +60,9 @@ class Basededados {
         nome     TEXT NOT NULL,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        perfil   TEXT NOT NULL
+        perfil   TEXT NOT NULL,
+        id_mesa  INTEGER,
+        FOREIGN KEY (id_mesa) REFERENCES mesas (id)
       )
     ''');
 
@@ -107,10 +120,10 @@ class Basededados {
 
   Future<void> _inserirDadosIniciais(Database db) async {
 
-    // Utilizadores de teste
+    // Utilizadores de teste (Staff)
     await db.rawInsert(
       'INSERT INTO utilizadores(nome, username, password, perfil) VALUES(?, ?, ?, ?)',
-      ['Administrador', 'admin', '1234', 'admin'],
+      ['Administrador', 'admin', '1234', 'administrador'],
     );
     await db.rawInsert(
       'INSERT INTO utilizadores(nome, username, password, perfil) VALUES(?, ?, ?, ?)',
@@ -121,11 +134,19 @@ class Basededados {
       ['Cozinha Principal', 'cozinha', '1234', 'cozinha'],
     );
 
-    // Mesas
+    // Criar 10 mesas e os seus respetivos utilizadores (Clientes)
     for (int i = 1; i <= 10; i++) {
-      await db.rawInsert(
+      // 1. Inserir a mesa
+      int idMesa = await db.rawInsert(
         'INSERT INTO mesas(numero, estado) VALUES(?, ?)',
         [i, 'livre'],
+      );
+
+      // 2. Inserir o utilizador para essa mesa
+      // Username: mesa1, mesa2... Password: 1234 (podes mudar para ser igual ao username)
+      await db.rawInsert(
+        'INSERT INTO utilizadores(nome, username, password, perfil, id_mesa) VALUES(?, ?, ?, ?, ?)',
+        ['Mesa $i', 'mesa$i', '1234', 'cliente', idMesa],
       );
     }
   }
@@ -149,19 +170,19 @@ class Basededados {
     return null;
   }
 
-  Future<int> inserirUtilizador(String nome, String username, String password, String perfil) async {
+  Future<int> inserirUtilizador(String nome, String username, String password, String perfil, {int? idMesa}) async {
     final db = await database;
     return await db.rawInsert(
-      'INSERT INTO utilizadores(nome, username, password, perfil) VALUES(?, ?, ?, ?)',
-      [nome, username, password, perfil],
+      'INSERT INTO utilizadores(nome, username, password, perfil, id_mesa) VALUES(?, ?, ?, ?, ?)',
+      [nome, username, password, perfil, idMesa],
     );
   }
 
-  Future<int> atualizarUtilizador(int id, String nome, String username, String password, String perfil) async {
+  Future<int> atualizarUtilizador(int id, String nome, String username, String password, String perfil, {int? idMesa}) async {
     final db = await database;
     return await db.rawUpdate(
-      'UPDATE utilizadores SET nome = ?, username = ?, password = ?, perfil = ? WHERE id = ?',
-      [nome, username, password, perfil, id],
+      'UPDATE utilizadores SET nome = ?, username = ?, password = ?, perfil = ?, id_mesa = ? WHERE id = ?',
+      [nome, username, password, perfil, idMesa, id],
     );
   }
 

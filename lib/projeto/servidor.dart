@@ -53,6 +53,12 @@ class Servidor {
   Future<bool> carregarEmentaNaBD() async {
     try {
       final bd = Basededados();
+      final db = await bd.database;
+      
+      // Limpar ementa antiga para evitar duplicados e aplicar novos preços
+      await db.rawDelete('DELETE FROM pratos');
+      
+      int totalInseridos = 0;
 
       for (final categoria in categorias) {
         final endpoint = categoria['endpoint']!;
@@ -63,14 +69,25 @@ class Servidor {
         for (final prato in pratos) {
           final nome      = prato['name']  ?? 'Sem nome';
           final descricao = prato['dsc']   ?? '';
-          final preco     = (prato['price'] as num?)?.toDouble() ?? 0.0;
+          double preco    = (prato['price'] as num?)?.toDouble() ?? 0.0;
           final imagem    = prato['img']   ?? '';
 
+          // --- TOQUE DE REALISMO NOS PREÇOS ---
+          // Se o preço for > 40, provavelmente está em cêntimos ou é irrealista
+          if (preco > 40) {
+            preco = preco / 10;
+          }
+          // Garante um preço mínimo razoável
+          if (preco < 3) {
+            preco = 6.50;
+          }
+
           await bd.inserirPrato(nome, descricao, preco, label, imagem);
+          totalInseridos++;
         }
       }
 
-      return true;
+      return totalInseridos > 0;
     } catch (e) {
       return false;
     }
