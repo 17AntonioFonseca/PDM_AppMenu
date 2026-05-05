@@ -1,0 +1,131 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "aulaspdm (Main)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex1)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex1.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex2)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex2.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex3)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex3.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex4)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex4.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex5)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex5.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex6)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex6.dart"
+        },
+        {
+            "name": "aulaspdm (f3_ex7)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/f3_ex7.dart"
+        },
+        {
+            "name": "aulaspdm (f4_ex1)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha4/main_ex_1.dart"
+        },
+        {
+            "name": "aulaspdm (f4_ex2)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha4/main_ex_2.dart"
+        },
+        {
+            "name": "aulaspdm (f4_ex3)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha4/main_ex_3.dart"
+        },
+        {
+            "name": "aulaspdm (f4_ex4)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha4/main_ex_4.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex1)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_1.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex2)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_2.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex3)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_3.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex4)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_4.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex5)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_5.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex6)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_6.dart"
+        },
+        {
+            "name": "aulaspdm (f5_ex7)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha5/main_ex_7.dart"
+        },
+        {
+            "name": "aulaspdm (f7_ex1)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha7/main.dart"
+        },
+        {
+            "name": "aulaspdm (projeto)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/projeto/main.dart"
+        }
+    ]
+}
