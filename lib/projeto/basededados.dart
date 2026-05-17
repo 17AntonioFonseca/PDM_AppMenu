@@ -293,6 +293,33 @@ class Basededados {
     ''', [estado]);
   }
 
+  Future<List<Map<String, dynamic>>> listarPedidosPorMesa(int idMesa) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT pedidos.*, mesas.numero as numero_mesa
+      FROM pedidos
+      JOIN mesas ON pedidos.id_mesa = mesas.id
+      WHERE pedidos.id_mesa = ?
+      ORDER BY pedidos.id DESC
+    ''', [idMesa]);
+  }
+
+  Future<double> calcularTotalMesa(int idMesa) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT SUM(pratos.preco * pedido_pratos.quantidade) as total
+      FROM pedidos
+      JOIN pedido_pratos ON pedidos.id = pedido_pratos.id_pedido
+      JOIN pratos ON pedido_pratos.id_prato = pratos.id
+      WHERE pedidos.id_mesa = ?
+    ''', [idMesa]);
+    
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return (result.first['total'] as num).toDouble();
+    }
+    return 0.0;
+  }
+
   Future<int> inserirPedido(int idMesa, String estado, String data) async {
     final db = await database;
     return await db.rawInsert(

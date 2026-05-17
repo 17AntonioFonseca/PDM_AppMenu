@@ -13,6 +13,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
   String _categoriaSelecionada = 'Hambúrgueres';
   List<Map<String, dynamic>> _pratos = [];
   bool _aCarregar = true;
+  final List<Map<String, dynamic>> _carrinho = [];
 
   @override
   void initState() {
@@ -33,7 +34,8 @@ class _ClienteScreenState extends State<ClienteScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final numeroMesa = user?['id_mesa'] ?? '?';
+    final idMesa = user?['id_mesa'] as int? ?? 0;
+    final numeroMesa = idMesa > 0 ? idMesa.toString() : '?';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5EFE6),
@@ -50,10 +52,33 @@ class _ClienteScreenState extends State<ClienteScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_basket_outlined),
-            onPressed: () {
-              // TODO: Abrir resumo do pedido
-            },
+            icon: const Icon(Icons.receipt_long_outlined),
+            onPressed: () => _mostrarEstadoPedidos(idMesa),
+          ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_basket_outlined),
+                onPressed: () => _abrirCarrinho(idMesa),
+              ),
+              if (_carrinho.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${_carrinho.length}',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -293,9 +318,21 @@ class _ClienteScreenState extends State<ClienteScreen> {
                             height: 55,
                             child: ElevatedButton(
                               onPressed: () {
+                                setState(() {
+                                  final index = _carrinho.indexWhere((item) => item['prato']['id'] == prato['id']);
+                                  if (index >= 0) {
+                                    _carrinho[index]['quantidade'] += quantidade;
+                                  } else {
+                                    _carrinho.add({'prato': prato, 'quantidade': quantidade});
+                                  }
+                                });
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Adicionado: $quantidade x ${prato['nome']}')),
+                                  SnackBar(
+                                    content: Text('Adicionado: $quantidade x ${prato['nome']}'),
+                                    backgroundColor: Colors.green[800],
+                                    duration: const Duration(seconds: 1),
+                                  ),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -330,6 +367,323 @@ class _ClienteScreenState extends State<ClienteScreen> {
         icon: Icon(icone, color: const Color(0xFF6B3F1F)),
         onPressed: acao,
       ),
+    );
+  }
+
+  void _abrirCarrinho(int idMesa) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            double total = 0;
+            for (var item in _carrinho) {
+              total += item['prato']['preco'] * item['quantidade'];
+            }
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5EFE6),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'O Seu Pedido',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: _carrinho.isEmpty
+                        ? const Center(child: Text('O carrinho está vazio.', style: TextStyle(fontSize: 16)))
+                        : ListView.builder(
+                            itemCount: _carrinho.length,
+                            itemBuilder: (context, index) {
+                              final item = _carrinho[index];
+                              final prato = item['prato'];
+                              final qtd = item['quantidade'];
+                              return ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    prato['imagem'],
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => const Icon(Icons.fastfood),
+                                  ),
+                                ),
+                                title: Text(prato['nome'], maxLines: 1, overflow: TextOverflow.ellipsis),
+                                subtitle: Text('${prato['preco'].toStringAsFixed(2)}€ x $qtd'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    setModalState(() {
+                                      setState(() {
+                                        _carrinho.removeAt(index);
+                                      });
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('${total.toStringAsFixed(2)}€', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFFD4821A))),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: _carrinho.isEmpty ? null : () => _finalizarPedido(idMesa),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B3F1F),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: const Text('Enviar para a Cozinha', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _finalizarPedido(int idMesa) async {
+    Navigator.pop(context); // Fechar o modal do carrinho
+    
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFFD4821A))),
+    );
+
+    try {
+      final bd = Basededados();
+      final data = DateTime.now().toIso8601String();
+      
+      // Inserir Pedido principal
+      final idPedido = await bd.inserirPedido(idMesa, 'pendente', data);
+
+      // Inserir pratos do pedido
+      for (var item in _carrinho) {
+        await bd.inserirPratoPedido(idPedido, item['prato']['id'], item['quantidade']);
+      }
+
+      // Atualizar estado da mesa para 'ocupada'
+      await bd.atualizarEstadoMesa(idMesa, 'ocupada');
+
+      // Limpar carrinho e fechar loading
+      setState(() {
+        _carrinho.clear();
+      });
+
+      if (mounted) {
+        Navigator.pop(context); // Tira o loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pedido enviado com sucesso para a cozinha!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Tira o loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao enviar pedido.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _mostrarEstadoPedidos(int idMesa) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Color(0xFFF5EFE6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Estado dos Pedidos',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: Basededados().listarPedidosPorMesa(idMesa),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFF6B3F1F)));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(child: Text('Ainda não fez nenhum pedido.', style: TextStyle(fontSize: 16)));
+                    }
+
+                    final pedidos = snapshot.data!;
+                    return ListView.builder(
+                      itemCount: pedidos.length,
+                      itemBuilder: (context, index) {
+                        final pedido = pedidos[index];
+                        final idPedido = pedido['id'];
+                        final estado = pedido['estado'];
+                        
+                        Color estadoColor;
+                        String estadoTexto;
+                        switch (estado) {
+                          case 'pendente':
+                            estadoColor = Colors.orange;
+                            estadoTexto = 'Na Fila da Cozinha';
+                            break;
+                          case 'preparacao':
+                            estadoColor = Colors.blue;
+                            estadoTexto = 'A Preparar';
+                            break;
+                          case 'pronto':
+                            estadoColor = Colors.green;
+                            estadoTexto = 'Pronto a Servir';
+                            break;
+                          case 'entregue':
+                            estadoColor = Colors.grey;
+                            estadoTexto = 'Entregue';
+                            break;
+                          default:
+                            estadoColor = Colors.black;
+                            estadoTexto = estado.toString().toUpperCase();
+                        }
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          child: ExpansionTile(
+                            title: Text('Pedido #$idPedido', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('Estado: $estadoTexto', style: TextStyle(color: estadoColor, fontWeight: FontWeight.w600)),
+                            children: [
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: Basededados().listarPratosDoPedido(idPedido),
+                                builder: (context, pratosSnapshot) {
+                                  if (!pratosSnapshot.hasData) return const SizedBox();
+                                  
+                                  final listaPratos = pratosSnapshot.data!;
+                                  double totalPedido = 0;
+                                  
+                                  for (var prato in listaPratos) {
+                                    totalPedido += (prato['preco'] as num).toDouble() * (prato['quantidade'] as int);
+                                  }
+
+                                  return Column(
+                                    children: [
+                                      const Divider(height: 1),
+                                      ...listaPratos.map((prato) {
+                                        final preco = (prato['preco'] as num).toDouble();
+                                        final qtd = prato['quantidade'];
+                                        final subtotal = preco * qtd;
+                                        
+                                        return ListTile(
+                                          dense: true,
+                                          title: Text(prato['nome'], style: const TextStyle(fontWeight: FontWeight.w500)),
+                                          subtitle: Text('${preco.toStringAsFixed(2)}€ x $qtd'),
+                                          trailing: Text('${subtotal.toStringAsFixed(2)}€', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        );
+                                      }),
+                                      Container(
+                                        color: const Color(0xFFF5EFE6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Total do Pedido:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            Text(
+                                              '${totalPedido.toStringAsFixed(2)}€', 
+                                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF6B3F1F)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const Divider(thickness: 2),
+              FutureBuilder<double>(
+                future: Basededados().calcularTotalMesa(idMesa),
+                builder: (context, snapshot) {
+                  final totalGeral = snapshot.data ?? 0.0;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Total a Pagar:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
+                        Text(
+                          '${totalGeral.toStringAsFixed(2)}€', 
+                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFFD4821A)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
