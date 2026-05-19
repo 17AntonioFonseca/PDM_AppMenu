@@ -126,6 +126,12 @@
             "request": "launch",
             "type": "dart",
             "program": "lib/projeto/main.dart"
+        },
+        {
+            "name": "aulaspdm (ficha10)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/ficha10/main.dart"
         }
     ]
 }

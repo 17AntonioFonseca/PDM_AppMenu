@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "864243999965",
+    "project_id": "aulaspdm-fa6c2",
+    "storage_bucket": "aulaspdm-fa6c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:864243999965:android:50233b2ad12291fcafa734",
+        "android_client_info": {
+          "package_name": "com.example.aulaspdm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwIfFJpijNs3GWkOhgY1Et6AdVTS6OAqs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
