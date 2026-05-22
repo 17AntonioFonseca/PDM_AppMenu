@@ -81,7 +81,10 @@ class _LoginScreenState extends State<LoginScreen> {
     // Verificar se o perfil selecionado no UI corresponde ao perfil na BD
     // (Por exemplo, se escolher "Admin" mas fizer login com conta de "Cliente")
     final perfilBD = user['perfil'].toString().toLowerCase();
-    final perfilUI = _perfilSelecionado.toLowerCase();
+    String perfilUI = _perfilSelecionado.toLowerCase();
+    
+    // Mapear o label do UI para o valor real usado na base de dados
+    if (perfilUI == 'administrador') perfilUI = 'admin';
 
     if (perfilBD != perfilUI) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -67,94 +67,100 @@ class _AdminGestaoContasState extends State<AdminGestaoContas> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 24, right: 24, top: 32,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(user == null ? 'Nova Conta' : 'Editar Conta', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
-                  const SizedBox(height: 16),
-                  TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome (Ex: Tablet da Mesa 2)')),
-                  TextField(controller: userController, decoration: const InputDecoration(labelText: 'Username (Ex: mesa2)')),
-                  TextField(controller: passController, decoration: const InputDecoration(labelText: 'Password')),
-                  const SizedBox(height: 16),
-                  
-                  DropdownButtonFormField<String>(
-                    value: perfilSelecionado,
-                    decoration: const InputDecoration(labelText: 'Perfil de Acesso'),
-                    items: const [
-                      DropdownMenuItem(value: 'mesa', child: Text('Mesa')),
-                      DropdownMenuItem(value: 'empregado', child: Text('Empregado de Sala')),
-                      DropdownMenuItem(value: 'cozinha', child: Text('Cozinha')),
-                      DropdownMenuItem(value: 'admin', child: Text('Administrador')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setModalState(() {
-                          perfilSelecionado = val;
-                          if (perfilSelecionado != 'mesa') {
-                            selectedIdMesa = null; // Limpar a mesa associada
-                          }
-                        });
-                      }
-                    },
-                  ),
-                  
-                  if (perfilSelecionado == 'mesa') ...[
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user == null ? 'Nova Conta' : 'Editar Conta', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
                     const SizedBox(height: 16),
-                    mesasDisponiveis.isEmpty && selectedIdMesa == null
-                        ? const Text('⚠️ Não há mesas disponíveis. Tem de criar uma nova mesa primeiro no Gestor de Mesas.', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
-                        : DropdownButtonFormField<int>(
-                            value: selectedIdMesa,
-                            decoration: const InputDecoration(labelText: 'Associar à Mesa Nº'),
-                            items: mesasDisponiveis.map((m) {
-                              return DropdownMenuItem<int>(
-                                value: m['id'],
-                                child: Text('Mesa ${m['numero']}'),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setModalState(() {
-                                selectedIdMesa = val;
-                              });
-                            },
-                          ),
-                  ],
-                  
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final nome = nomeController.text.trim();
-                        final username = userController.text.trim();
-                        final pass = passController.text.trim();
-
-                        if (nome.isEmpty || username.isEmpty || pass.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha todos os campos obrigatórios.')));
-                          return;
+                    TextField(controller: nomeController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Nome (Ex: Tablet da Mesa 2)', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                    TextField(controller: userController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Username (Ex: mesa2)', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                    TextField(controller: passController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Password', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                    const SizedBox(height: 16),
+                    
+                    DropdownButtonFormField<String>(
+                      value: perfilSelecionado,
+                      style: const TextStyle(color: Color(0xFF6B3F1F), fontSize: 16),
+                      dropdownColor: const Color(0xFFF5EFE6),
+                      decoration: const InputDecoration(labelText: 'Perfil de Acesso', labelStyle: TextStyle(color: Color(0xFF9C7B5E))),
+                      items: const [
+                        DropdownMenuItem(value: 'mesa', child: Text('Mesa')),
+                        DropdownMenuItem(value: 'empregado', child: Text('Empregado de Sala')),
+                        DropdownMenuItem(value: 'cozinha', child: Text('Cozinha')),
+                        DropdownMenuItem(value: 'admin', child: Text('Administrador')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setModalState(() {
+                            perfilSelecionado = val;
+                            if (perfilSelecionado != 'mesa') {
+                              selectedIdMesa = null; // Limpar a mesa associada
+                            }
+                          });
                         }
-
-                        if (perfilSelecionado == 'mesa' && selectedIdMesa == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tem de selecionar uma mesa para esta conta.')));
-                          return;
-                        }
-
-                        if (user == null) {
-                          await bd.inserirUtilizador(nome, username, pass, perfilSelecionado, idMesa: selectedIdMesa);
-                        } else {
-                          await bd.atualizarUtilizador(user['id'], nome, username, pass, perfilSelecionado, idMesa: selectedIdMesa);
-                        }
-                        
-                        if (mounted) Navigator.pop(context);
-                        _carregarDados();
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
-                      child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    
+                    if (perfilSelecionado == 'mesa') ...[
+                      const SizedBox(height: 16),
+                      mesasDisponiveis.isEmpty && selectedIdMesa == null
+                          ? const Text('⚠️ Não há mesas disponíveis. Tem de criar uma nova mesa primeiro no Gestor de Mesas.', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+                          : DropdownButtonFormField<int>(
+                              value: selectedIdMesa,
+                              style: const TextStyle(color: Color(0xFF6B3F1F), fontSize: 16),
+                              dropdownColor: const Color(0xFFF5EFE6),
+                              decoration: const InputDecoration(labelText: 'Associar à Mesa Nº', labelStyle: TextStyle(color: Color(0xFF9C7B5E))),
+                              items: mesasDisponiveis.map((m) {
+                                return DropdownMenuItem<int>(
+                                  value: m['id'],
+                                  child: Text('Mesa ${m['numero']}'),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setModalState(() {
+                                  selectedIdMesa = val;
+                                });
+                              },
+                            ),
+                    ],
+                    
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final nome = nomeController.text.trim();
+                          final username = userController.text.trim();
+                          final pass = passController.text.trim();
+
+                          if (nome.isEmpty || username.isEmpty || pass.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha todos os campos obrigatórios.')));
+                            return;
+                          }
+
+                          if (perfilSelecionado == 'mesa' && selectedIdMesa == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tem de selecionar uma mesa para esta conta.')));
+                            return;
+                          }
+
+                          if (user == null) {
+                            await bd.inserirUtilizador(nome, username, pass, perfilSelecionado, idMesa: selectedIdMesa);
+                          } else {
+                            await bd.atualizarUtilizador(user['id'], nome, username, pass, perfilSelecionado, idMesa: selectedIdMesa);
+                          }
+                          
+                          if (mounted) Navigator.pop(context);
+                          _carregarDados();
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
+                        child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             );
           }

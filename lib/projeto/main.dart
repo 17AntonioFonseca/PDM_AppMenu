@@ -5,6 +5,7 @@ import 'cliente_screen.dart';
 import 'empregado_screen.dart';
 import 'cozinha_screen.dart';
 import 'admin_screen.dart';
+import 'basededados.dart';
 
 // =====================================================
 // MAIN — Ponto de entrada do projeto
@@ -18,7 +19,14 @@ import 'admin_screen.dart';
 //   /admin       → AdminScreen
 // =====================================================
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // FIX TEMPORÁRIO: Eliminar admin corrompido e criar de novo
+  final bd = await Basededados().database;
+  await bd.rawDelete("DELETE FROM utilizadores WHERE username = 'admin' OR perfil = 'admin'");
+  await bd.rawInsert("INSERT INTO utilizadores (nome, username, password, perfil) VALUES ('Administrador', 'admin', '1234', 'admin')");
+  
   runApp(const MesaEMesaApp());
 }
 

@@ -46,41 +46,43 @@ class _AdminGestaoEmentaState extends State<AdminGestaoEmenta> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
             left: 24, right: 24, top: 32,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(prato == null ? 'Adicionar Prato' : 'Editar Prato', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
-              const SizedBox(height: 16),
-              TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome do Prato')),
-              TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descrição')),
-              TextField(controller: precoController, decoration: const InputDecoration(labelText: 'Preço (€)'), keyboardType: TextInputType.number),
-              TextField(controller: catController, decoration: const InputDecoration(labelText: 'Categoria (Ex: Entradas, Peixe)')),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final nome = nomeController.text;
-                    final desc = descController.text;
-                    final preco = double.tryParse(precoController.text.replaceAll(',', '.')) ?? 0.0;
-                    final cat = catController.text;
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(prato == null ? 'Adicionar Prato' : 'Editar Prato', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
+                const SizedBox(height: 16),
+                TextField(controller: nomeController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Nome do Prato', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                TextField(controller: descController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Descrição', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                TextField(controller: precoController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Preço (€)', labelStyle: TextStyle(color: Color(0xFF9C7B5E))), keyboardType: TextInputType.number),
+                TextField(controller: catController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Categoria (Ex: Entradas, Peixe)', labelStyle: TextStyle(color: Color(0xFF9C7B5E)))),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final nome = nomeController.text;
+                      final desc = descController.text;
+                      final preco = double.tryParse(precoController.text.replaceAll(',', '.')) ?? 0.0;
+                      final cat = catController.text;
 
-                    if (prato == null) {
-                      await Basededados().inserirPrato(nome, desc, preco, cat, '');
-                    } else {
-                      await Basededados().atualizarPrato(prato['id'], nome, desc, preco, cat, prato['imagem'] ?? '');
-                    }
-                    
-                    if (mounted) Navigator.pop(context);
-                    _carregarDados();
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
-                  child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+                      if (prato == null) {
+                        await Basededados().inserirPrato(nome, desc, preco, cat, '');
+                      } else {
+                        await Basededados().atualizarPrato(prato['id'], nome, desc, preco, cat, prato['imagem'] ?? '');
+                      }
+                      
+                      if (mounted) Navigator.pop(context);
+                      _carregarDados();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
+                    child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         );
       }

@@ -43,38 +43,40 @@ class _AdminGestaoMesasState extends State<AdminGestaoMesas> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
             left: 24, right: 24, top: 32,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(mesa == null ? 'Adicionar Mesa' : 'Editar Mesa', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
-              const SizedBox(height: 16),
-              TextField(controller: numeroController, decoration: const InputDecoration(labelText: 'Número da Mesa'), keyboardType: TextInputType.number),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final numero = int.tryParse(numeroController.text) ?? 0;
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(mesa == null ? 'Adicionar Mesa' : 'Editar Mesa', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
+                const SizedBox(height: 16),
+                TextField(controller: numeroController, style: const TextStyle(color: Color(0xFF6B3F1F)), decoration: const InputDecoration(labelText: 'Número da Mesa', labelStyle: TextStyle(color: Color(0xFF9C7B5E))), keyboardType: TextInputType.number),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final numero = int.tryParse(numeroController.text) ?? 0;
 
-                    if (mesa == null) {
-                      await Basededados().inserirMesa(numero);
-                    } else {
-                      // Note: Our DB doesn't have atualizarMesa, but typically we only update the state.
-                      // Since we want to update the number, we would need to run a raw update.
-                      final db = await Basededados().database;
-                      await db.rawUpdate('UPDATE mesas SET numero = ? WHERE id = ?', [numero, mesa['id']]);
-                    }
-                    
-                    if (mounted) Navigator.pop(context);
-                    _carregarDados();
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
-                  child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+                      if (mesa == null) {
+                        await Basededados().inserirMesa(numero);
+                      } else {
+                        // Note: Our DB doesn't have atualizarMesa, but typically we only update the state.
+                        // Since we want to update the number, we would need to run a raw update.
+                        final db = await Basededados().database;
+                        await db.rawUpdate('UPDATE mesas SET numero = ? WHERE id = ?', [numero, mesa['id']]);
+                      }
+                      
+                      if (mounted) Navigator.pop(context);
+                      _carregarDados();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B3F1F), foregroundColor: Colors.white),
+                    child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         );
       }
