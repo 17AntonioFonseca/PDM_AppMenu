@@ -4,6 +4,7 @@ import 'basededados.dart';
 import 'admin_gestao_ementa.dart';
 import 'admin_gestao_contas.dart';
 import 'admin_gestao_mesas.dart';
+import '../ficha10/shapref.dart'; // Importação da ficha 10
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -18,6 +19,7 @@ class _AdminScreenState extends State<AdminScreen> {
   int _totalUsers = 0;
   int _totalMesas = 0;
   int _mesasOcupadas = 0;
+  String _ultimaSinc = 'Nunca'; // Variável da Shared Preference
 
   @override
   void initState() {
@@ -36,12 +38,16 @@ class _AdminScreenState extends State<AdminScreen> {
       if (mesa['estado'] == 'ocupada') ocupadas++;
     }
 
+    // LER DA SHARED PREFERENCE (Ficha 10)
+    final ultimaData = await ShaPref().getUltimaAtualizacao();
+
     if (mounted) {
       setState(() {
         _totalPratos = pratos.length;
         _totalUsers = utilizadores.length;
         _totalMesas = mesas.length;
         _mesasOcupadas = ocupadas;
+        _ultimaSinc = ultimaData.isEmpty ? 'Nunca' : ultimaData;
       });
     }
   }
@@ -52,13 +58,20 @@ class _AdminScreenState extends State<AdminScreen> {
     final servidor = Servidor();
     final sucesso = await servidor.carregarEmentaNaBD();
 
+    if (sucesso) {
+      // GUARDAR NA SHARED PREFERENCE A DATA E HORA
+      final agora = DateTime.now();
+      final dataHora = '${agora.day.toString().padLeft(2,'0')}/${agora.month.toString().padLeft(2,'0')} às ${agora.hour.toString().padLeft(2,'0')}:${agora.minute.toString().padLeft(2,'0')}';
+      await ShaPref().setUltimaAtualizacao(dataHora);
+    }
+
     await _atualizarDashboard();
     setState(() => _aCarregar = false);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(sucesso ? 'Ementa carregada com sucesso!' : 'Erro ao carregar ementa.'),
+          content: Text(sucesso ? 'Ementa carregada com sucesso!' : 'A API não retornou todos os pratos. Sem alterações.'),
           backgroundColor: sucesso ? Colors.green[800] : Colors.red[800],
         ),
       );
@@ -175,6 +188,8 @@ class _AdminScreenState extends State<AdminScreen> {
             const SizedBox(height: 40),
 
             const Text('Ações Rápidas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
+            const SizedBox(height: 8),
+            Text('Última sincronização API: $_ultimaSinc', style: const TextStyle(color: Colors.blueGrey, fontSize: 13, fontStyle: FontStyle.italic)),
             const SizedBox(height: 16),
             if (_aCarregar)
               const Center(

@@ -55,35 +55,40 @@ class Servidor {
       final bd = Basededados();
       final db = await bd.database;
       
-      // Limpar ementa antiga para evitar duplicados e aplicar novos preços
+      // Limpar ementa antiga
       await db.rawDelete('DELETE FROM pratos');
       
       int totalInseridos = 0;
 
-      for (final categoria in categorias) {
-        final endpoint = categoria['endpoint']!;
-        final label    = categoria['label']!;
+      // 1. Fazer UM ÚNICO pedido para ir buscar TODOS os pratos 
+      final response = await http.get(Uri.parse('$_baseUrl/all'));
 
-        final pratos = await buscarPratos(endpoint);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> todosPratosPorCategoria = json.decode(response.body);
 
-        for (final prato in pratos) {
-          final nome      = prato['name']  ?? 'Sem nome';
-          final descricao = prato['dsc']   ?? '';
-          double preco    = (prato['price'] as num?)?.toDouble() ?? 0.0;
-          final imagem    = prato['img']   ?? '';
+        // 2. Filtrar categorias localmente ANTES de guardar
+        // O JSON devolve um mapa onde a chave é o endpoint (ex: 'burgers')
+        // e o valor é a lista de pratos
+        for (final categoria in categorias) {
+          final catEndpoint = categoria['endpoint']!;
+          final label = categoria['label']!;
+          
+          if (todosPratosPorCategoria.containsKey(catEndpoint)) {
+            final listaPratos = todosPratosPorCategoria[catEndpoint] as List;
 
-          // --- TOQUE DE REALISMO NOS PREÇOS ---
-          // Se o preço for > 40, provavelmente está em cêntimos ou é irrealista
-          if (preco > 40) {
-            preco = preco / 10;
+            for (final prato in listaPratos) {
+              final nome      = prato['name']  ?? 'Sem nome';
+              final descricao = prato['dsc']   ?? '';
+              double preco    = (prato['price'] as num?)?.toDouble() ?? 0.0;
+              final imagem    = prato['img']   ?? '';
+
+              if (preco > 40) preco = preco / 10;
+              if (preco < 3) preco = 6.50;
+
+              await bd.inserirPrato(nome, descricao, preco, label, imagem);
+              totalInseridos++;
+            }
           }
-          // Garante um preço mínimo razoável
-          if (preco < 3) {
-            preco = 6.50;
-          }
-
-          await bd.inserirPrato(nome, descricao, preco, label, imagem);
-          totalInseridos++;
         }
       }
 

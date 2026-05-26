@@ -112,10 +112,60 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                                 itemCount: pedidos.length,
                                 itemBuilder: (context, index) {
                                   final pedido = pedidos[index];
-                                  return ListTile(
-                                    leading: const Icon(Icons.receipt, color: Color(0xFF9C7B5E)),
-                                    title: Text('Ronda de Pedido #${pedido['id']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    subtitle: Text('Estado atual na cozinha: ${pedido['estado']}'),
+                                  return Card(
+                                    elevation: 0,
+                                    color: Colors.white,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.receipt, color: Color(0xFF9C7B5E)),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Ronda de Pedido #${pedido['id']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                    Text('Estado na cozinha: ${pedido['estado']}', style: TextStyle(color: pedido['estado'] == 'pronto' ? Colors.green[700] : Colors.orange[800], fontWeight: FontWeight.w500)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const Divider(),
+                                          FutureBuilder<List<Map<String, dynamic>>>(
+                                            future: Basededados().listarPratosDoPedido(pedido['id']),
+                                            builder: (context, pratosSnapshot) {
+                                              if (!pratosSnapshot.hasData) {
+                                                return const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)));
+                                              }
+                                              final pratos = pratosSnapshot.data!;
+                                              if (pratos.isEmpty) return const Text('Nenhum prato associado a este pedido.');
+                                              
+                                              return Column(
+                                                children: pratos.map((prato) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      children: [
+                                                        Expanded(child: Text('${prato['quantidade']}x ${prato['nome']}', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
+                                                        Text('${(prato['preco'] * prato['quantidade']).toStringAsFixed(2)}€', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
