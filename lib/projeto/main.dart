@@ -9,25 +9,22 @@ import 'cozinha_screen.dart';
 import 'admin_screen.dart';
 
 // =====================================================
-// MAIN — Ponto de entrada do projeto
+// MAIN - Ponto de entrada do projeto
 // =====================================================
 // ESTRUTURA DE ROTAS:
-//   /            → HomeScreen (splash)
-//   /login       → LoginScreen
-//   /cliente     → ClienteScreen
-//   /empregado   → EmpregadoScreen
-//   /cozinha     → CozinhaScreen
-//   /admin       → AdminScreen
+//   /            -> HomeScreen (splash)
+//   /login       -> LoginScreen
+//   /cliente     -> ClienteScreen
+//   /empregado   -> EmpregadoScreen
+//   /cozinha     -> CozinhaScreen
+//   /admin       -> AdminScreen
 // =====================================================
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Inicializar o Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
   runApp(const MesaEMesaApp());
 }
 

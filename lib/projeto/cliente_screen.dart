@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'basededados.dart';
 import 'servidor.dart';
 
@@ -34,7 +35,8 @@ class _ClienteScreenState extends State<ClienteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final user =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final idMesa = user?['id_mesa'] as int? ?? 0;
     final numeroMesa = idMesa > 0 ? idMesa.toString() : '?';
 
@@ -47,8 +49,14 @@ class _ClienteScreenState extends State<ClienteScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Mesa & Mesa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Mesa $numeroMesa', style: const TextStyle(fontSize: 12, color: Color(0xFFD4821A))),
+            const Text(
+              'Mesa & Mesa',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Mesa $numeroMesa',
+              style: const TextStyle(fontSize: 12, color: Color(0xFFD4821A)),
+            ),
           ],
         ),
         actions: [
@@ -75,7 +83,11 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     ),
                     child: Text(
                       '${_carrinho.length}',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -127,23 +139,28 @@ class _ClienteScreenState extends State<ClienteScreen> {
           // ------ LISTA DE PRATOS ------
           Expanded(
             child: _aCarregar
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6B3F1F)))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF6B3F1F)),
+                  )
                 : _pratos.isEmpty
-                    ? const Center(child: Text('Nenhum prato encontrado nesta categoria.'))
-                    : GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                ? const Center(
+                    child: Text('Nenhum prato encontrado nesta categoria.'),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 0.75,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
-                        itemCount: _pratos.length,
-                        itemBuilder: (context, index) {
-                          final prato = _pratos[index];
-                          return _buildCardPrato(prato);
-                        },
-                      ),
+                    itemCount: _pratos.length,
+                    itemBuilder: (context, index) {
+                      final prato = _pratos[index];
+                      return _buildCardPrato(prato);
+                    },
+                  ),
           ),
         ],
       ),
@@ -171,13 +188,16 @@ class _ClienteScreenState extends State<ClienteScreen> {
             // Imagem
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(15),
+                ),
                 child: Image.network(
                   prato['imagem'],
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Center(child: Icon(Icons.fastfood, size: 40, color: Colors.grey)),
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.fastfood, size: 40, color: Colors.grey),
+                  ),
                 ),
               ),
             ),
@@ -191,7 +211,10 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     prato['nome'],
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -205,7 +228,11 @@ class _ClienteScreenState extends State<ClienteScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Ver detalhes',
-                    style: TextStyle(fontSize: 11, color: Colors.blueGrey, decoration: TextDecoration.underline),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blueGrey,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ],
               ),
@@ -238,14 +265,19 @@ class _ClienteScreenState extends State<ClienteScreen> {
                   Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(25),
+                        ),
                         child: Image.network(
                           prato['imagem'],
                           height: 250,
                           width: double.infinity,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              const SizedBox(height: 250, child: Icon(Icons.fastfood, size: 100)),
+                              const SizedBox(
+                                height: 250,
+                                child: Icon(Icons.fastfood, size: 100),
+                              ),
                         ),
                       ),
                       Positioned(
@@ -274,37 +306,62 @@ class _ClienteScreenState extends State<ClienteScreen> {
                               Expanded(
                                 child: Text(
                                   prato['nome'],
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F)),
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF6B3F1F),
+                                  ),
                                 ),
                               ),
                               Text(
                                 '${prato['preco'].toStringAsFixed(2)}€',
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFD4821A)),
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFD4821A),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           const Text(
                             'Descrição / Ingredientes',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9C7B5E)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF9C7B5E),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             prato['descricao'],
-                            style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.5),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                              height: 1.5,
+                            ),
                           ),
                           const Spacer(),
-                          
+
                           // Seletor de Quantidade
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               _botaoQtd(Icons.remove, () {
-                                if (quantidade > 1) setModalState(() => quantidade--);
+                                if (quantidade > 1) {
+                                  setModalState(() => quantidade--);
+                                }
                               }),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
-                                child: Text('$quantidade', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Text(
+                                  '$quantidade',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               _botaoQtd(Icons.add, () {
                                 setModalState(() => quantidade++);
@@ -320,17 +377,26 @@ class _ClienteScreenState extends State<ClienteScreen> {
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  final index = _carrinho.indexWhere((item) => item['prato']['id'] == prato['id']);
+                                  final index = _carrinho.indexWhere(
+                                    (item) =>
+                                        item['prato']['id'] == prato['id'],
+                                  );
                                   if (index >= 0) {
-                                    _carrinho[index]['quantidade'] += quantidade;
+                                    _carrinho[index]['quantidade'] +=
+                                        quantidade;
                                   } else {
-                                    _carrinho.add({'prato': prato, 'quantidade': quantidade});
+                                    _carrinho.add({
+                                      'prato': prato,
+                                      'quantidade': quantidade,
+                                    });
                                   }
                                 });
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Adicionado: $quantidade x ${prato['nome']}'),
+                                    content: Text(
+                                      'Adicionado: $quantidade x ${prato['nome']}',
+                                    ),
                                     backgroundColor: Colors.green[800],
                                     duration: const Duration(seconds: 1),
                                   ),
@@ -339,9 +405,17 @@ class _ClienteScreenState extends State<ClienteScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF6B3F1F),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
                               ),
-                              child: const Text('Adicionar ao Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              child: const Text(
+                                'Adicionar ao Pedido',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -399,7 +473,11 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     children: [
                       const Text(
                         'O Seu Pedido',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F)),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6B3F1F),
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -410,7 +488,12 @@ class _ClienteScreenState extends State<ClienteScreen> {
                   const Divider(),
                   Expanded(
                     child: _carrinho.isEmpty
-                        ? const Center(child: Text('O carrinho está vazio.', style: TextStyle(fontSize: 16)))
+                        ? const Center(
+                            child: Text(
+                              'O carrinho está vazio.',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: _carrinho.length,
                             itemBuilder: (context, index) {
@@ -425,13 +508,23 @@ class _ClienteScreenState extends State<ClienteScreen> {
                                     width: 50,
                                     height: 50,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => const Icon(Icons.fastfood),
+                                    errorBuilder: (c, e, s) =>
+                                        const Icon(Icons.fastfood),
                                   ),
                                 ),
-                                title: Text(prato['nome'], maxLines: 1, overflow: TextOverflow.ellipsis),
-                                subtitle: Text('${prato['preco'].toStringAsFixed(2)}€ x $qtd'),
+                                title: Text(
+                                  prato['nome'],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${prato['preco'].toStringAsFixed(2)}€ x $qtd',
+                                ),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
                                   onPressed: () {
                                     setModalState(() {
                                       setState(() {
@@ -448,8 +541,21 @@ class _ClienteScreenState extends State<ClienteScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text('${total.toStringAsFixed(2)}€', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFFD4821A))),
+                      const Text(
+                        'Total:',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${total.toStringAsFixed(2)}€',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFD4821A),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -457,13 +563,23 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: _carrinho.isEmpty ? null : () => _finalizarPedido(idMesa),
+                      onPressed: _carrinho.isEmpty
+                          ? null
+                          : () => _finalizarPedido(idMesa),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6B3F1F),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
-                      child: const Text('Enviar para a Cozinha', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Enviar para a Cozinha',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -477,36 +593,33 @@ class _ClienteScreenState extends State<ClienteScreen> {
 
   Future<void> _finalizarPedido(int idMesa) async {
     Navigator.pop(context); // Fechar o modal do carrinho
-    
+
     // Mostrar loading
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFFD4821A))),
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFFD4821A)),
+      ),
     );
 
     try {
       final bd = Basededados();
       final data = DateTime.now().toIso8601String();
-      
+
       // Inserir Pedido principal
       final idPedido = await bd.inserirPedido(idMesa, 'pendente', data);
 
       // Inserir pratos do pedido
       for (var item in _carrinho) {
-        await bd.inserirPratoPedido(idPedido, item['prato']['id'], item['quantidade']);
+        await bd.inserirPratoPedido(
+          idPedido,
+          item['prato']['id'],
+          item['quantidade'],
+        );
       }
 
-      // ENVIAR PARA A NUVEM (Firebase Firestore)
-      for (var item in _carrinho) {
-        await FirebaseFirestore.instance.collection('pedidos').add({
-          'estado': 0, // 0 = pendente, 1 = preparação, 2 = pronto
-          'mesa': 'Mesa $idMesa',
-          'preco': (item['prato']['preco'] as num).toDouble(),
-          'produto': item['prato']['nome'].toString(),
-          'quantidade': item['quantidade'] as int,
-        });
-      }
+      final firestoreEnviado = await _enviarPedidoParaFirestore(idMesa);
 
       // Atualizar estado da mesa para 'ocupada'
       await bd.atualizarEstadoMesa(idMesa, 'ocupada');
@@ -519,9 +632,13 @@ class _ClienteScreenState extends State<ClienteScreen> {
       if (mounted) {
         Navigator.pop(context); // Tira o loading
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pedido enviado com sucesso para a cozinha!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              firestoreEnviado
+                  ? 'Pedido enviado com sucesso para a cozinha!'
+                  : 'Pedido guardado, mas o Firestore nao aceitou a notificacao.',
+            ),
+            backgroundColor: firestoreEnviado ? Colors.green : Colors.orange,
             duration: Duration(seconds: 3),
           ),
         );
@@ -531,11 +648,42 @@ class _ClienteScreenState extends State<ClienteScreen> {
         Navigator.pop(context); // Tira o loading
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Erro ao enviar pedido.'),
+            content: Text('Erro ao guardar pedido na base de dados local.'),
             backgroundColor: Colors.red,
           ),
         );
       }
+    }
+  }
+
+  Future<bool> _enviarPedidoParaFirestore(int idMesa) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      final pedidosRef = FirebaseFirestore.instance.collection('pedidos');
+
+      for (var item in _carrinho) {
+        final prato = item['prato'] as Map<String, dynamic>;
+        final quantidade = item['quantidade'] as int;
+        final docRef = pedidosRef.doc();
+
+        batch.set(docRef, {
+          'estado': 0,
+          'mesa': idMesa.toString(),
+          'preco': (prato['preco'] as num).toDouble(),
+          'produto': prato['nome'].toString(),
+          'quantidade': quantidade,
+          'criadoEm': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      return true;
+    } on FirebaseException catch (e) {
+      debugPrint('Erro Firestore ao enviar pedido: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      debugPrint('Erro inesperado ao enviar pedido para Firestore: $e');
+      return false;
     }
   }
 
@@ -560,7 +708,11 @@ class _ClienteScreenState extends State<ClienteScreen> {
                 children: [
                   const Text(
                     'Estado dos Pedidos',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F)),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6B3F1F),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -574,10 +726,19 @@ class _ClienteScreenState extends State<ClienteScreen> {
                   future: Basededados().listarPedidosPorMesa(idMesa),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFF6B3F1F)));
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF6B3F1F),
+                        ),
+                      );
                     }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text('Ainda não fez nenhum pedido.', style: TextStyle(fontSize: 16)));
+                      return const Center(
+                        child: Text(
+                          'Ainda não fez nenhum pedido.',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      );
                     }
 
                     final pedidos = snapshot.data!;
@@ -587,7 +748,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
                         final pedido = pedidos[index];
                         final idPedido = pedido['id'];
                         final estado = pedido['estado'];
-                        
+
                         Color estadoColor;
                         String estadoTexto;
                         switch (estado) {
@@ -614,48 +775,94 @@ class _ClienteScreenState extends State<ClienteScreen> {
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           child: ExpansionTile(
-                            title: Text('Pedido #$idPedido', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Estado: $estadoTexto', style: TextStyle(color: estadoColor, fontWeight: FontWeight.w600)),
+                            title: Text(
+                              'Pedido #$idPedido',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Estado: $estadoTexto',
+                              style: TextStyle(
+                                color: estadoColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             children: [
                               FutureBuilder<List<Map<String, dynamic>>>(
-                                future: Basededados().listarPratosDoPedido(idPedido),
+                                future: Basededados().listarPratosDoPedido(
+                                  idPedido,
+                                ),
                                 builder: (context, pratosSnapshot) {
-                                  if (!pratosSnapshot.hasData) return const SizedBox();
-                                  
+                                  if (!pratosSnapshot.hasData) {
+                                    return const SizedBox();
+                                  }
+
                                   final listaPratos = pratosSnapshot.data!;
                                   double totalPedido = 0;
-                                  
+
                                   for (var prato in listaPratos) {
-                                    totalPedido += (prato['preco'] as num).toDouble() * (prato['quantidade'] as int);
+                                    totalPedido +=
+                                        (prato['preco'] as num).toDouble() *
+                                        (prato['quantidade'] as int);
                                   }
 
                                   return Column(
                                     children: [
                                       const Divider(height: 1),
                                       ...listaPratos.map((prato) {
-                                        final preco = (prato['preco'] as num).toDouble();
+                                        final preco = (prato['preco'] as num)
+                                            .toDouble();
                                         final qtd = prato['quantidade'];
                                         final subtotal = preco * qtd;
-                                        
+
                                         return ListTile(
                                           dense: true,
-                                          title: Text(prato['nome'], style: const TextStyle(fontWeight: FontWeight.w500)),
-                                          subtitle: Text('${preco.toStringAsFixed(2)}€ x $qtd'),
-                                          trailing: Text('${subtotal.toStringAsFixed(2)}€', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          title: Text(
+                                            prato['nome'],
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            '${preco.toStringAsFixed(2)}€ x $qtd',
+                                          ),
+                                          trailing: Text(
+                                            '${subtotal.toStringAsFixed(2)}€',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         );
                                       }),
                                       Container(
                                         color: const Color(0xFFF5EFE6),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                          vertical: 12.0,
+                                        ),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Text('Total do Pedido:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            const Text(
+                                              'Total do Pedido:',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
                                             Text(
-                                              '${totalPedido.toStringAsFixed(2)}€', 
-                                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF6B3F1F)),
+                                              '${totalPedido.toStringAsFixed(2)}€',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 18,
+                                                color: Color(0xFF6B3F1F),
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -682,10 +889,21 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total a Pagar:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF6B3F1F))),
+                        const Text(
+                          'Total a Pagar:',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6B3F1F),
+                          ),
+                        ),
                         Text(
-                          '${totalGeral.toStringAsFixed(2)}€', 
-                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFFD4821A)),
+                          '${totalGeral.toStringAsFixed(2)}€',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFD4821A),
+                          ),
                         ),
                       ],
                     ),

@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'basededados.dart';
 
 class CozinhaScreen extends StatefulWidget {
@@ -14,57 +14,58 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   List<Map<String, dynamic>> _pedidosPendentes = [];
   List<Map<String, dynamic>> _pedidosPreparacao = [];
   bool _isLoading = true;
-  StreamSubscription<QuerySnapshot>? _notificacoesSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _pedidosSubscription;
+  bool _snapshotInicialRecebido = false;
 
   @override
   void initState() {
     super.initState();
     _carregarPedidos();
-    _iniciarEscutaNotificacoes();
-  }
-
-  void _iniciarEscutaNotificacoes() {
-    // Escutar novos documentos na Firebase em tempo real
-    _notificacoesSub = FirebaseFirestore.instance
-        .collection('pedidos')
-        .where('estado', isEqualTo: 0) // Apenas os novos (pendentes)
-        .snapshots()
-        .listen((snapshot) {
-      for (var change in snapshot.docChanges) {
-        // Se foi adicionado um documento novo na Nuvem
-        if (change.type == DocumentChangeType.added) {
-          final data = change.doc.data() as Map<String, dynamic>?;
-          if (data != null && mounted) {
-            final produto = data['produto'] ?? 'Prato';
-            final quantidade = data['quantidade'] ?? 1;
-            final mesa = data['mesa'] ?? 'Mesa';
-            
-            // Tocar uma notificação na Cozinha!
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.notifications_active, color: Colors.white),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text('NOVO PEDIDO: ${quantidade}x $produto ($mesa)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                  ],
-                ),
-                backgroundColor: Colors.red[700],
-                duration: const Duration(seconds: 5),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-          }
-        }
-      }
-    });
+    _escutarNovosPedidos();
   }
 
   @override
   void dispose() {
-    _notificacoesSub?.cancel();
+    _pedidosSubscription?.cancel();
     super.dispose();
+  }
+
+  void _escutarNovosPedidos() {
+    _pedidosSubscription = FirebaseFirestore.instance
+        .collection('pedidos')
+        .where('estado', isEqualTo: 0)
+        .snapshots()
+        .listen((snapshot) {
+          if (!_snapshotInicialRecebido) {
+            _snapshotInicialRecebido = true;
+            return;
+          }
+
+          for (final change in snapshot.docChanges) {
+            if (change.type != DocumentChangeType.added) continue;
+
+            final pedido = change.doc.data();
+            if (pedido == null) continue;
+
+            final quantidade = pedido['quantidade'] ?? '?';
+            final produto = pedido['produto'] ?? 'Produto';
+            final mesa = pedido['mesa'] ?? '?';
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'NOVO PEDIDO: ${quantidade}x $produto (Mesa $mesa)',
+                  ),
+                  backgroundColor: Colors.red[800],
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          }
+
+          _carregarPedidos();
+        });
   }
 
   Future<void> _carregarPedidos() async {
@@ -85,7 +86,7 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   Future<void> _alterarEstado(int idPedido, String novoEstado) async {
     await Basededados().atualizarEstadoPedido(idPedido, novoEstado);
     _carregarPedidos(); // Recarregar a lista
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -116,7 +117,8 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
             IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Sair',
-              onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, '/login'),
             ),
           ],
           bottom: const TabBar(
@@ -129,19 +131,39 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
             ],
           ),
         ),
-        body: _isLoading 
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF6B3F1F)))
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF6B3F1F)),
+              )
             : TabBarView(
                 children: [
-                  _buildListaPedidos(_pedidosPendentes, 'na fila', 'Aceitar Pedido', 'preparacao', Colors.orange),
-                  _buildListaPedidos(_pedidosPreparacao, 'a preparar', 'Marcar como Pronto', 'pronto', Colors.blue),
+                  _buildListaPedidos(
+                    _pedidosPendentes,
+                    'na fila',
+                    'Aceitar Pedido',
+                    'preparacao',
+                    Colors.orange,
+                  ),
+                  _buildListaPedidos(
+                    _pedidosPreparacao,
+                    'a preparar',
+                    'Marcar como Pronto',
+                    'pronto',
+                    Colors.blue,
+                  ),
                 ],
               ),
       ),
     );
   }
 
-  Widget _buildListaPedidos(List<Map<String, dynamic>> pedidos, String emptyMsg, String btnText, String nextState, Color badgeColor) {
+  Widget _buildListaPedidos(
+    List<Map<String, dynamic>> pedidos,
+    String emptyMsg,
+    String btnText,
+    String nextState,
+    Color badgeColor,
+  ) {
     if (pedidos.isEmpty) {
       return Center(
         child: Column(
@@ -149,7 +171,10 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
           children: [
             Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text('Sem pedidos $emptyMsg.', style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+            Text(
+              'Sem pedidos $emptyMsg.',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
           ],
         ),
       );
@@ -162,7 +187,7 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
         final pedido = pedidos[index];
         final idPedido = pedido['id'];
         final numMesa = pedido['numero_mesa'];
-        
+
         // Extrair a hora da data ISO (ex: 2026-05-17T15:09:57 -> 15:09)
         String horaPedido = '?';
         if (pedido['data'] != null && pedido['data'].toString().length >= 16) {
@@ -172,20 +197,36 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: ExpansionTile(
             initiallyExpanded: true,
             leading: CircleAvatar(
               backgroundColor: badgeColor,
-              child: Text(numMesa.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(
+                numMesa.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            title: Text('Mesa $numMesa - Pedido #$idPedido', style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              'Mesa $numMesa - Pedido #$idPedido',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('Recebido às $horaPedido'),
             children: [
               FutureBuilder<List<Map<String, dynamic>>>(
                 future: Basededados().listarPratosDoPedido(idPedido),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator());
+                  if (!snapshot.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    );
+                  }
                   final pratos = snapshot.data!;
                   return Column(
                     children: [
@@ -193,14 +234,29 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
                       ...pratos.map((prato) {
                         return ListTile(
                           dense: true,
-                          title: Text(prato['nome'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                          title: Text(
+                            prato['nome'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
                           trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text('${prato['quantidade']}x', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            child: Text(
+                              '${prato['quantidade']}x',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                         );
                       }),
@@ -210,13 +266,22 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
                           width: double.infinity,
                           height: 45,
                           child: ElevatedButton.icon(
-                            onPressed: () => _alterarEstado(idPedido, nextState),
+                            onPressed: () =>
+                                _alterarEstado(idPedido, nextState),
                             icon: const Icon(Icons.check),
-                            label: Text(btnText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            label: Text(
+                              btnText,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF6B3F1F),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
                         ),
