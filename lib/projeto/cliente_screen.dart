@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'basededados.dart';
 import 'servidor.dart';
 
@@ -494,6 +495,17 @@ class _ClienteScreenState extends State<ClienteScreen> {
       // Inserir pratos do pedido
       for (var item in _carrinho) {
         await bd.inserirPratoPedido(idPedido, item['prato']['id'], item['quantidade']);
+      }
+
+      // ENVIAR PARA A NUVEM (Firebase Firestore)
+      for (var item in _carrinho) {
+        await FirebaseFirestore.instance.collection('pedidos').add({
+          'estado': 0, // 0 = pendente, 1 = preparação, 2 = pronto
+          'mesa': 'Mesa $idMesa',
+          'preco': (item['prato']['preco'] as num).toDouble(),
+          'produto': item['prato']['nome'].toString(),
+          'quantidade': item['quantidade'] as int,
+        });
       }
 
       // Atualizar estado da mesa para 'ocupada'

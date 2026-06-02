@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'basededados.dart';
 
 class CozinhaScreen extends StatefulWidget {
@@ -12,11 +14,57 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   List<Map<String, dynamic>> _pedidosPendentes = [];
   List<Map<String, dynamic>> _pedidosPreparacao = [];
   bool _isLoading = true;
+  StreamSubscription<QuerySnapshot>? _notificacoesSub;
 
   @override
   void initState() {
     super.initState();
     _carregarPedidos();
+    _iniciarEscutaNotificacoes();
+  }
+
+  void _iniciarEscutaNotificacoes() {
+    // Escutar novos documentos na Firebase em tempo real
+    _notificacoesSub = FirebaseFirestore.instance
+        .collection('pedidos')
+        .where('estado', isEqualTo: 0) // Apenas os novos (pendentes)
+        .snapshots()
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        // Se foi adicionado um documento novo na Nuvem
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data() as Map<String, dynamic>?;
+          if (data != null && mounted) {
+            final produto = data['produto'] ?? 'Prato';
+            final quantidade = data['quantidade'] ?? 1;
+            final mesa = data['mesa'] ?? 'Mesa';
+            
+            // Tocar uma notificação na Cozinha!
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.notifications_active, color: Colors.white),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text('NOVO PEDIDO: ${quantidade}x $produto ($mesa)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  ],
+                ),
+                backgroundColor: Colors.red[700],
+                duration: const Duration(seconds: 5),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificacoesSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _carregarPedidos() async {
