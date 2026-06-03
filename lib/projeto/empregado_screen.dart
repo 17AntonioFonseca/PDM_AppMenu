@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'basededados.dart';
 
 class EmpregadoScreen extends StatefulWidget {
@@ -12,14 +14,70 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
   List<Map<String, dynamic>> _mesas = [];
   bool _isLoading = true;
 
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _pedidosSubscription;
+  bool _snapshotInicialRecebido = false;
+
   @override
   void initState() {
     super.initState();
-    _carregarMesas();
+    _inicializarEmpregado();
   }
 
-  Future<void> _carregarMesas() async {
-    setState(() => _isLoading = true);
+  Future<void> _inicializarEmpregado() async {
+    await _carregarMesas(mostrarSpinner: true);
+    _escutarAlteracoesPedidos();
+  }
+
+  @override
+  void dispose() {
+    _pedidosSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _escutarAlteracoesPedidos() {
+    _pedidosSubscription = FirebaseFirestore.instance
+        .collection('pedidos')
+        .snapshots()
+        .listen((snapshot) async {
+          await Basededados().sincronizarComFirestore();
+          
+          if (!_snapshotInicialRecebido) {
+            _snapshotInicialRecebido = true;
+            _carregarMesas(mostrarSpinner: false);
+            return;
+          }
+
+          for (final change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.modified) {
+              final data = change.doc.data();
+              if (data != null && data['estado'] == 2) {
+                final String produto = data['produto'] ?? 'Produto';
+                final String mesa = data['mesa'] ?? '?';
+                final int quantidade = data['quantidade'] ?? 1;
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '🍽️ PEDIDO PRONTO: Mesa $mesa — ${quantidade}x $produto está pronto para entregar!',
+                      ),
+                      backgroundColor: Colors.green[800],
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
+              }
+            }
+          }
+
+          _carregarMesas(mostrarSpinner: false);
+        });
+  }
+
+  Future<void> _carregarMesas({bool mostrarSpinner = true}) async {
+    if (mostrarSpinner) {
+      setState(() => _isLoading = true);
+    }
     await Basededados().sincronizarComFirestore();
     final mesas = await Basededados().listarMesas();
     if (mounted) {
@@ -232,7 +290,7 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Atualizar Sala',
-            onPressed: _carregarMesas,
+            onPressed: () => _carregarMesas(),
           ),
           IconButton(
             icon: const Icon(Icons.logout),

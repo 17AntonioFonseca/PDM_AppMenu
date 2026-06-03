@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'basededados.dart';
 import 'servidor.dart';
@@ -16,10 +17,77 @@ class _ClienteScreenState extends State<ClienteScreen> {
   bool _aCarregar = true;
   final List<Map<String, dynamic>> _carrinho = [];
 
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _pedidosSubscription;
+  bool _snapshotInicialRecebido = false;
+  bool _initialized = false;
+  int _idMesa = 0;
+
   @override
   void initState() {
     super.initState();
     _carregarPratos();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final user =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      _idMesa = user?['id_mesa'] as int? ?? 0;
+      if (_idMesa > 0) {
+        _escutarAlteracoesPedidos(_idMesa);
+      }
+      _initialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pedidosSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _escutarAlteracoesPedidos(int idMesa) {
+    _pedidosSubscription = FirebaseFirestore.instance
+        .collection('pedidos')
+        .where('mesa', isEqualTo: idMesa.toString())
+        .snapshots()
+        .listen((snapshot) async {
+          await Basededados().sincronizarComFirestore();
+          
+          if (!_snapshotInicialRecebido) {
+            _snapshotInicialRecebido = true;
+            return;
+          }
+
+          for (final change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.modified) {
+              final data = change.doc.data();
+              if (data != null) {
+                final String produto = data['produto'] ?? 'Produto';
+                final int estadoInt = data['estado'] ?? 0;
+                
+                String? msg;
+                if (estadoInt == 1) {
+                  msg = '🍳 O seu prato "$produto" começou a ser preparado!';
+                } else if (estadoInt == 2) {
+                  msg = '🍕 O seu prato "$produto" está pronto e a caminho da sua mesa!';
+                }
+
+                if (msg != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(msg),
+                      backgroundColor: const Color(0xFFD4821A),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              }
+            }
+          }
+        });
   }
 
   Future<void> _carregarPratos() async {
