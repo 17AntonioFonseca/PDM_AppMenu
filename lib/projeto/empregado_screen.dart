@@ -20,6 +20,7 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
 
   Future<void> _carregarMesas() async {
     setState(() => _isLoading = true);
+    await Basededados().sincronizarComFirestore();
     final mesas = await Basededados().listarMesas();
     if (mounted) {
       setState(() {
@@ -31,15 +32,12 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
 
   Future<void> _faturarMesa(int idMesa, int numeroMesa) async {
     final bd = Basededados();
-    final db = await bd.database;
     
-    // Quando a mesa paga, apagamos o histórico de pratos e pedidos
-    // para que fique completamente limpa para os próximos clientes.
-    await db.rawDelete('DELETE FROM pedido_pratos WHERE id_pedido IN (SELECT id FROM pedidos WHERE id_mesa = ?)', [idMesa]);
-    await db.rawDelete('DELETE FROM pedidos WHERE id_mesa = ?', [idMesa]);
+    // 1. Elimina os pedidos da mesa no Firestore
+    await bd.faturarMesaNoFirestore(idMesa);
     
-    // Libertar a mesa
-    await bd.atualizarEstadoMesa(idMesa, 'livre');
+    // 2. Sincroniza com o Firestore para atualizar a BD local SQLite
+    await bd.sincronizarComFirestore();
     
     if (mounted) {
       Navigator.pop(context); // Fecha a janela da fatura

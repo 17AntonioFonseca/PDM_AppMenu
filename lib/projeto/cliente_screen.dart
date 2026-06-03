@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'basededados.dart';
 import 'servidor.dart';
 
@@ -619,7 +618,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
         );
       }
 
-      final firestoreEnviado = await _enviarPedidoParaFirestore(idMesa);
+      final firestoreEnviado = await _enviarPedidoParaFirestore(idMesa, data);
 
       // Atualizar estado da mesa para 'ocupada'
       await bd.atualizarEstadoMesa(idMesa, 'ocupada');
@@ -656,7 +655,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
     }
   }
 
-  Future<bool> _enviarPedidoParaFirestore(int idMesa) async {
+  Future<bool> _enviarPedidoParaFirestore(int idMesa, String data) async {
     try {
       final batch = FirebaseFirestore.instance.batch();
       final pedidosRef = FirebaseFirestore.instance.collection('pedidos');
@@ -672,6 +671,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
           'preco': (prato['preco'] as num).toDouble(),
           'produto': prato['nome'].toString(),
           'quantidade': quantidade,
+          'data': data,
           'criadoEm': FieldValue.serverTimestamp(),
         });
       }
@@ -723,7 +723,10 @@ class _ClienteScreenState extends State<ClienteScreen> {
               const Divider(),
               Expanded(
                 child: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: Basededados().listarPedidosPorMesa(idMesa),
+                  future: () async {
+                    await Basededados().sincronizarComFirestore();
+                    return Basededados().listarPedidosPorMesa(idMesa);
+                  }(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(

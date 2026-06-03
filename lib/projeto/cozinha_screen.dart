@@ -20,7 +20,13 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   @override
   void initState() {
     super.initState();
-    _carregarPedidos();
+    _inicializarCozinha();
+  }
+
+  Future<void> _inicializarCozinha() async {
+    setState(() => _isLoading = true);
+    await Basededados().sincronizarComFirestore();
+    await _carregarPedidos(mostrarSpinner: false);
     _escutarNovosPedidos();
   }
 
@@ -33,11 +39,14 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   void _escutarNovosPedidos() {
     _pedidosSubscription = FirebaseFirestore.instance
         .collection('pedidos')
-        .where('estado', isEqualTo: 0)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
+          // Sempre que houver alterações no Firestore, sincroniza
+          await Basededados().sincronizarComFirestore();
+
           if (!_snapshotInicialRecebido) {
             _snapshotInicialRecebido = true;
+            _carregarPedidos(mostrarSpinner: false);
             return;
           }
 
@@ -46,6 +55,7 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
 
             final pedido = change.doc.data();
             if (pedido == null) continue;
+            if (pedido['estado'] != 0) continue; // Apenas SnackBar para novos pedidos pendentes
 
             final quantidade = pedido['quantidade'] ?? '?';
             final produto = pedido['produto'] ?? 'Produto';
@@ -64,12 +74,14 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
             }
           }
 
-          _carregarPedidos();
+          _carregarPedidos(mostrarSpinner: false);
         });
   }
 
-  Future<void> _carregarPedidos() async {
-    setState(() => _isLoading = true);
+  Future<void> _carregarPedidos({bool mostrarSpinner = false}) async {
+    if (mostrarSpinner) {
+      setState(() => _isLoading = true);
+    }
     final bd = Basededados();
     final pendentes = await bd.listarPedidosPorEstado('pendente');
     final preparacao = await bd.listarPedidosPorEstado('preparacao');
@@ -84,8 +96,14 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
   }
 
   Future<void> _alterarEstado(int idPedido, String novoEstado) async {
+    // 1. Atualizar no Firestore
+    await Basededados().atualizarEstadoPedidoNoFirestore(idPedido, novoEstado);
+
+    // 2. Atualizar no SQLite local
     await Basededados().atualizarEstadoPedido(idPedido, novoEstado);
-    _carregarPedidos(); // Recarregar a lista
+    
+    // 3. Recarregar lista local
+    _carregarPedidos(mostrarSpinner: false);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +130,11 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Atualizar',
-              onPressed: _carregarPedidos,
+              onPressed: () async {
+                setState(() => _isLoading = true);
+                await Basededados().sincronizarComFirestore();
+                _carregarPedidos(mostrarSpinner: false);
+              },
             ),
             IconButton(
               icon: const Icon(Icons.logout),
