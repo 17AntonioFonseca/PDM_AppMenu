@@ -14,6 +14,9 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
   List<Map<String, dynamic>> _mesas = [];
   bool _isLoading = true;
 
+  // IDs de mesas com pelo menos um pedido no estado 'pronto' (para badge de alerta)
+  final Set<int> _mesasComPedidoPronto = {};
+
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _pedidosSubscription;
   bool _snapshotInicialRecebido = false;
 
@@ -80,11 +83,45 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
     }
     await Basededados().sincronizarComFirestore();
     final mesas = await Basededados().listarMesas();
+
+    // Calcular quais as mesas com pelo menos um pedido 'pronto'
+    final Set<int> prontas = {};
+    for (final mesa in mesas) {
+      if (mesa['estado'] == 'ocupada') {
+        final pedidos = await Basededados().listarPedidosPorMesa(mesa['id'] as int);
+        if (pedidos.any((p) => p['estado'] == 'pronto')) {
+          prontas.add(mesa['id'] as int);
+        }
+      }
+    }
+
     if (mounted) {
       setState(() {
         _mesas = mesas;
+        _mesasComPedidoPronto
+          ..clear()
+          ..addAll(prontas);
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _confirmarEntregaMesa(int idMesa, int idPedido) async {
+    final bd = Basededados();
+    // 1. Atualizar estado no Firestore para 'entregue' (3)
+    await bd.atualizarEstadoPedidoNoFirestore(idPedido, 'entregue');
+    // 2. Atualizar estado localmente
+    await bd.atualizarEstadoPedido(idPedido, 'entregue');
+    // 3. Recarregar para remover badge
+    await _carregarMesas(mostrarSpinner: false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Pedido #$idPedido marcado como entregue!'),
+          backgroundColor: Colors.teal[700],
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -158,6 +195,8 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                     
                     // Verifica se há pedidos que ainda não estão prontos ou entregues
                     bool temPedidosIncompletos = pedidos.any((p) => p['estado'] == 'pendente' || p['estado'] == 'preparacao');
+                    // Pedidos prontos para entregar (mas ainda não entregues)
+                    final pedidosProntos = pedidos.where((p) => p['estado'] == 'pronto').toList();
 
                     return Column(
                       children: [
@@ -187,7 +226,21 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
                                                     Text('Ronda de Pedido #${pedido['id']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                                    Text('Estado na cozinha: ${pedido['estado']}', style: TextStyle(color: pedido['estado'] == 'pronto' ? Colors.green[700] : Colors.orange[800], fontWeight: FontWeight.w500)),
+                                                    Text(
+                                                      pedido['estado'] == 'entregue'
+                                                        ? 'Entregue ✅'
+                                                        : pedido['estado'] == 'pronto'
+                                                          ? 'Pronto para entregar 🔔'
+                                                          : 'Em preparação…',
+                                                      style: TextStyle(
+                                                        color: pedido['estado'] == 'entregue'
+                                                          ? Colors.teal[700]
+                                                          : pedido['estado'] == 'pronto'
+                                                            ? Colors.green[700]
+                                                            : Colors.orange[800],
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -247,15 +300,41 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
+                        // Botões de "Confirmar Entrega" para pedidos prontos
+                        if (pedidosProntos.isNotEmpty) ...
+                          pedidosProntos.map((p) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _confirmarEntregaMesa(idMesa, p['id'] as int),
+                                icon: const Icon(Icons.delivery_dining),
+                                label: Text(
+                                  'Confirmar Entrega do Pedido #${p['id']}',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.teal[700],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          )),
                         SizedBox(
                           width: double.infinity,
                           height: 55,
                           child: ElevatedButton.icon(
-                            onPressed: temPedidosIncompletos ? null : () => _faturarMesa(idMesa, numeroMesa),
+                            onPressed: (temPedidosIncompletos || pedidosProntos.isNotEmpty) ? null : () => _faturarMesa(idMesa, numeroMesa),
                             icon: const Icon(Icons.point_of_sale),
                             label: Text(
-                              temPedidosIncompletos ? 'Aguardar pratos da cozinha' : 'Faturar e Libertar Mesa', 
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                              temPedidosIncompletos
+                                ? 'Aguardar pratos da cozinha'
+                                : pedidosProntos.isNotEmpty
+                                  ? 'Confirme as entregas primeiro'
+                                  : 'Faturar e Libertar Mesa',
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green[700],
@@ -314,48 +393,86 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                 itemBuilder: (context, index) {
                   final mesa = _mesas[index];
                   final isOcupada = mesa['estado'] == 'ocupada';
-                  
+                  final temPedidoPronto = _mesasComPedidoPronto.contains(mesa['id'] as int);
+
+                  // Cor: verde normal = livre, laranja = ocupada, verde-esmeralda = pronto a entregar
+                  final Color corCard = temPedidoPronto
+                      ? Colors.teal[600]!
+                      : isOcupada
+                          ? const Color(0xFFD4821A)
+                          : Colors.green[600]!;
+
                   return GestureDetector(
                     onTap: () => _abrirDetalhesMesa(mesa),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isOcupada ? const Color(0xFFD4821A) : Colors.green[600],
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isOcupada ? Icons.people_alt : Icons.check_circle_outline,
-                            size: 40,
-                            color: Colors.white,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: corCard,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'MESA ${mesa['numero']}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                temPedidoPronto
+                                    ? Icons.delivery_dining
+                                    : isOcupada
+                                        ? Icons.people_alt
+                                        : Icons.check_circle_outline,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'MESA ${mesa['numero']}',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                temPedidoPronto
+                                    ? 'Pronto a entregar!'
+                                    : isOcupada
+                                        ? 'Ocupada'
+                                        : 'Livre',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Badge de alerta no canto superior direito
+                        if (temPedidoPronto)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.red[600],
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.notifications_active,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
-                          Text(
-                            isOcupada ? 'Ocupada' : 'Livre',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   );
                 },

@@ -66,6 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final bd = Basededados();
     final user = await bd.autenticar(utilizador, password);
 
+    if (!mounted) return;
+
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -99,6 +101,16 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+
+    // Garantir que a ementa (pratos e preços) está carregada neste dispositivo.
+    // Sem pratos na BD local, os totais ficam sempre a 0,00€.
+    final ementaOk = await Servidor().ementaCarregada();
+    if (!ementaOk) {
+      await Servidor().carregarEmentaNaBD();
+    }
+
+    // Verificar se o widget ainda está montado após os awaits
+    if (!mounted) return;
 
     // Navegação baseada no perfil, passando os dados do utilizador
     switch (_perfilSelecionado) {
