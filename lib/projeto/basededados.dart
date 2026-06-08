@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-
 // =====================================================
 // BASE DE DADOS — Mesa & Mesa
 // Tabelas:
@@ -55,7 +54,6 @@ class Basededados {
   // =====================================================
 
   Future<void> _onCreate(Database db, int version) async {
-
     // Tabela utilizadores
     await db.execute('''
       CREATE TABLE utilizadores (
@@ -122,7 +120,6 @@ class Basededados {
   // =====================================================
 
   Future<void> _inserirDadosIniciais(Database db) async {
-
     // Utilizadores de teste (Staff)
     await db.rawInsert(
       'INSERT INTO utilizadores(nome, username, password, perfil) VALUES(?, ?, ?, ?)',
@@ -163,7 +160,10 @@ class Basededados {
     return await db.rawQuery('SELECT * FROM utilizadores');
   }
 
-  Future<Map<String, dynamic>?> autenticar(String username, String password) async {
+  Future<Map<String, dynamic>?> autenticar(
+    String username,
+    String password,
+  ) async {
     final db = await database;
     final result = await db.rawQuery(
       'SELECT * FROM utilizadores WHERE username = ? AND password = ?',
@@ -173,7 +173,13 @@ class Basededados {
     return null;
   }
 
-  Future<int> inserirUtilizador(String nome, String username, String password, String perfil, {int? idMesa}) async {
+  Future<int> inserirUtilizador(
+    String nome,
+    String username,
+    String password,
+    String perfil, {
+    int? idMesa,
+  }) async {
     final db = await database;
     return await db.rawInsert(
       'INSERT INTO utilizadores(nome, username, password, perfil, id_mesa) VALUES(?, ?, ?, ?, ?)',
@@ -181,7 +187,14 @@ class Basededados {
     );
   }
 
-  Future<int> atualizarUtilizador(int id, String nome, String username, String password, String perfil, {int? idMesa}) async {
+  Future<int> atualizarUtilizador(
+    int id,
+    String nome,
+    String username,
+    String password,
+    String perfil, {
+    int? idMesa,
+  }) async {
     final db = await database;
     return await db.rawUpdate(
       'UPDATE utilizadores SET nome = ?, username = ?, password = ?, perfil = ?, id_mesa = ? WHERE id = ?',
@@ -191,10 +204,7 @@ class Basededados {
 
   Future<int> eliminarUtilizador(int id) async {
     final db = await database;
-    return await db.rawDelete(
-      'DELETE FROM utilizadores WHERE id = ?',
-      [id],
-    );
+    return await db.rawDelete('DELETE FROM utilizadores WHERE id = ?', [id]);
   }
 
   // =====================================================
@@ -208,10 +218,10 @@ class Basededados {
 
   Future<int> atualizarEstadoMesa(int id, String estado) async {
     final db = await database;
-    return await db.rawUpdate(
-      'UPDATE mesas SET estado = ? WHERE id = ?',
-      [estado, id],
-    );
+    return await db.rawUpdate('UPDATE mesas SET estado = ? WHERE id = ?', [
+      estado,
+      id,
+    ]);
   }
 
   Future<int> inserirMesa(int numero) async {
@@ -224,10 +234,7 @@ class Basededados {
 
   Future<int> eliminarMesa(int id) async {
     final db = await database;
-    return await db.rawDelete(
-      'DELETE FROM mesas WHERE id = ?',
-      [id],
-    );
+    return await db.rawDelete('DELETE FROM mesas WHERE id = ?', [id]);
   }
 
   // =====================================================
@@ -239,15 +246,22 @@ class Basededados {
     return await db.rawQuery('SELECT * FROM pratos ORDER BY categoria');
   }
 
-  Future<List<Map<String, dynamic>>> listarPratosPorCategoria(String categoria) async {
+  Future<List<Map<String, dynamic>>> listarPratosPorCategoria(
+    String categoria,
+  ) async {
     final db = await database;
-    return await db.rawQuery(
-      'SELECT * FROM pratos WHERE categoria = ?',
-      [categoria],
-    );
+    return await db.rawQuery('SELECT * FROM pratos WHERE categoria = ?', [
+      categoria,
+    ]);
   }
 
-  Future<int> inserirPrato(String nome, String descricao, double preco, String categoria, String imagem) async {
+  Future<int> inserirPrato(
+    String nome,
+    String descricao,
+    double preco,
+    String categoria,
+    String imagem,
+  ) async {
     final db = await database;
     return await db.rawInsert(
       'INSERT INTO pratos(nome, descricao, preco, categoria, imagem) VALUES(?, ?, ?, ?, ?)',
@@ -255,7 +269,14 @@ class Basededados {
     );
   }
 
-  Future<int> atualizarPrato(int id, String nome, String descricao, double preco, String categoria, String imagem) async {
+  Future<int> atualizarPrato(
+    int id,
+    String nome,
+    String descricao,
+    double preco,
+    String categoria,
+    String imagem,
+  ) async {
     final db = await database;
     return await db.rawUpdate(
       'UPDATE pratos SET nome = ?, descricao = ?, preco = ?, categoria = ?, imagem = ? WHERE id = ?',
@@ -265,10 +286,7 @@ class Basededados {
 
   Future<int> eliminarPrato(int id) async {
     final db = await database;
-    return await db.rawDelete(
-      'DELETE FROM pratos WHERE id = ?',
-      [id],
-    );
+    return await db.rawDelete('DELETE FROM pratos WHERE id = ?', [id]);
   }
 
   // =====================================================
@@ -285,38 +303,49 @@ class Basededados {
     ''');
   }
 
-  Future<List<Map<String, dynamic>>> listarPedidosPorEstado(String estado) async {
+  Future<List<Map<String, dynamic>>> listarPedidosPorEstado(
+    String estado,
+  ) async {
     final db = await database;
-    return await db.rawQuery('''
+    return await db.rawQuery(
+      '''
       SELECT pedidos.*, mesas.numero as numero_mesa
       FROM pedidos
       JOIN mesas ON pedidos.id_mesa = mesas.id
       WHERE pedidos.estado = ?
       ORDER BY pedidos.id DESC
-    ''', [estado]);
+    ''',
+      [estado],
+    );
   }
 
   Future<List<Map<String, dynamic>>> listarPedidosPorMesa(int idMesa) async {
     final db = await database;
-    return await db.rawQuery('''
+    return await db.rawQuery(
+      '''
       SELECT pedidos.*, mesas.numero as numero_mesa
       FROM pedidos
       JOIN mesas ON pedidos.id_mesa = mesas.id
       WHERE pedidos.id_mesa = ?
       ORDER BY pedidos.id DESC
-    ''', [idMesa]);
+    ''',
+      [idMesa],
+    );
   }
 
   Future<double> calcularTotalMesa(int idMesa) async {
     final db = await database;
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT SUM(pratos.preco * pedido_pratos.quantidade) as total
       FROM pedidos
       JOIN pedido_pratos ON pedidos.id = pedido_pratos.id_pedido
       JOIN pratos ON pedido_pratos.id_prato = pratos.id
       WHERE pedidos.id_mesa = ?
-    ''', [idMesa]);
-    
+    ''',
+      [idMesa],
+    );
+
     if (result.isNotEmpty && result.first['total'] != null) {
       return (result.first['total'] as num).toDouble();
     }
@@ -333,10 +362,10 @@ class Basededados {
 
   Future<int> atualizarEstadoPedido(int id, String estado) async {
     final db = await database;
-    return await db.rawUpdate(
-      'UPDATE pedidos SET estado = ? WHERE id = ?',
-      [estado, id],
-    );
+    return await db.rawUpdate('UPDATE pedidos SET estado = ? WHERE id = ?', [
+      estado,
+      id,
+    ]);
   }
 
   // =====================================================
@@ -345,15 +374,22 @@ class Basededados {
 
   Future<List<Map<String, dynamic>>> listarPratosDoPedido(int idPedido) async {
     final db = await database;
-    return await db.rawQuery('''
+    return await db.rawQuery(
+      '''
       SELECT pedido_pratos.*, pratos.nome, pratos.preco
       FROM pedido_pratos
       JOIN pratos ON pedido_pratos.id_prato = pratos.id
       WHERE pedido_pratos.id_pedido = ?
-    ''', [idPedido]);
+    ''',
+      [idPedido],
+    );
   }
 
-  Future<int> inserirPratoPedido(int idPedido, int idPrato, int quantidade) async {
+  Future<int> inserirPratoPedido(
+    int idPedido,
+    int idPrato,
+    int quantidade,
+  ) async {
     final db = await database;
     return await db.rawInsert(
       'INSERT INTO pedido_pratos(id_pedido, id_prato, quantidade) VALUES(?, ?, ?)',
@@ -367,13 +403,15 @@ class Basededados {
 
   Future<void> sincronizarComFirestore() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('pedidos').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('pedidos')
+          .get();
       final db = await database;
-      
+
       final Set<String> activeOrderKeys = {}; // Formato: "idMesa_data"
       final Map<String, String> orderStates = {}; // Chave -> estado texto
       final List<Map<String, dynamic>> docList = [];
-      
+
       for (final doc in snapshot.docs) {
         final data = doc.data();
         final String? mesaStr = data['mesa'];
@@ -382,7 +420,7 @@ class Basededados {
           final key = "${mesaStr}_$dataIso";
           activeOrderKeys.add(key);
           docList.add(data);
-          
+
           final int estadoInt = data['estado'] ?? 0;
           String estadoSql = 'pendente';
           if (estadoInt == 1) {
@@ -392,7 +430,7 @@ class Basededados {
           } else if (estadoInt == 3) {
             estadoSql = 'entregue';
           }
-          
+
           orderStates[key] = estadoSql;
         }
       }
@@ -400,43 +438,50 @@ class Basededados {
       await db.transaction((txn) async {
         // 1. Obter todos os pedidos locais
         final List<Map<String, dynamic>> localPedidos = await txn.rawQuery(
-          'SELECT id, id_mesa, data, estado FROM pedidos'
+          'SELECT id, id_mesa, data, estado FROM pedidos',
         );
-        
+
         // 2. Apagar localmente pedidos que já não existem no Firestore (porque foram faturados)
         for (final local in localPedidos) {
           final int localId = local['id'] as int;
           final int localMesa = local['id_mesa'] as int;
           final String localData = local['data'] as String;
           final key = "${localMesa}_$localData";
-          
+
           if (!activeOrderKeys.contains(key)) {
-            await txn.rawDelete('DELETE FROM pedido_pratos WHERE id_pedido = ?', [localId]);
+            await txn.rawDelete(
+              'DELETE FROM pedido_pratos WHERE id_pedido = ?',
+              [localId],
+            );
             await txn.rawDelete('DELETE FROM pedidos WHERE id = ?', [localId]);
           }
         }
-        
+
         // 3. Adicionar/Atualizar pedidos vindos do Firestore
         for (final data in docList) {
           final String? mesaStr = data['mesa'];
           final String? dataIso = data['data'];
           final String? produto = data['produto'];
           final int? quantidade = data['quantidade'];
-          
-          if (mesaStr == null || dataIso == null || produto == null || quantidade == null) continue;
-          
+
+          if (mesaStr == null ||
+              dataIso == null ||
+              produto == null ||
+              quantidade == null)
+            continue;
+
           final int idMesa = int.tryParse(mesaStr) ?? 0;
           if (idMesa == 0) continue;
-          
+
           final key = "${mesaStr}_$dataIso";
           final String estadoSql = orderStates[key] ?? 'pendente';
-          
+
           // Encontrar ou criar o pedido local
           final List<Map<String, dynamic>> pedExist = await txn.rawQuery(
             'SELECT id, estado FROM pedidos WHERE id_mesa = ? AND data = ?',
             [idMesa, dataIso],
           );
-          
+
           int idPedido;
           if (pedExist.isEmpty) {
             idPedido = await txn.rawInsert(
@@ -453,21 +498,21 @@ class Basededados {
               );
             }
           }
-          
+
           // Encontrar ID do prato por nome
           final List<Map<String, dynamic>> pratos = await txn.rawQuery(
             'SELECT id FROM pratos WHERE nome = ?',
             [produto],
           );
-          
+
           if (pratos.isNotEmpty) {
             final int idPrato = pratos.first['id'] as int;
-            
+
             final List<Map<String, dynamic>> itemExist = await txn.rawQuery(
               'SELECT id FROM pedido_pratos WHERE id_pedido = ? AND id_prato = ?',
               [idPedido, idPrato],
             );
-            
+
             if (itemExist.isEmpty) {
               await txn.rawInsert(
                 'INSERT INTO pedido_pratos(id_pedido, id_prato, quantidade) VALUES(?, ?, ?)',
@@ -476,18 +521,21 @@ class Basededados {
             }
           }
         }
-        
+
         // 4. Sincronizar estado das mesas com base nos pedidos ativos
         // Primeiro limpar o estado de todas as mesas para 'livre'
         await txn.rawUpdate("UPDATE mesas SET estado = 'livre'");
-        
+
         // Depois marcar como 'ocupada' as mesas com pedidos ativos
         final List<Map<String, dynamic>> activeMesas = await txn.rawQuery(
-          'SELECT DISTINCT id_mesa FROM pedidos'
+          'SELECT DISTINCT id_mesa FROM pedidos',
         );
         for (final row in activeMesas) {
           final int idMesa = row['id_mesa'] as int;
-          await txn.rawUpdate("UPDATE mesas SET estado = 'ocupada' WHERE id = ?", [idMesa]);
+          await txn.rawUpdate(
+            "UPDATE mesas SET estado = 'ocupada' WHERE id = ?",
+            [idMesa],
+          );
         }
       });
     } catch (e) {
@@ -495,20 +543,23 @@ class Basededados {
     }
   }
 
-  Future<void> atualizarEstadoPedidoNoFirestore(int idPedido, String novoEstado) async {
+  Future<void> atualizarEstadoPedidoNoFirestore(
+    int idPedido,
+    String novoEstado,
+  ) async {
     try {
       final db = await database;
-      
+
       final List<Map<String, dynamic>> pedidos = await db.rawQuery(
         'SELECT id_mesa, data FROM pedidos WHERE id = ?',
         [idPedido],
       );
-      
+
       if (pedidos.isEmpty) return;
-      
+
       final int idMesa = pedidos.first['id_mesa'] as int;
       final String dataIso = pedidos.first['data'] as String;
-      
+
       int estadoInt = 0;
       if (novoEstado == 'preparacao') {
         estadoInt = 1;
@@ -517,13 +568,13 @@ class Basededados {
       } else if (novoEstado == 'entregue') {
         estadoInt = 3;
       }
-      
+
       final querySnapshot = await FirebaseFirestore.instance
           .collection('pedidos')
           .where('mesa', isEqualTo: idMesa.toString())
           .where('data', isEqualTo: dataIso)
           .get();
-          
+
       final batch = FirebaseFirestore.instance.batch();
       for (final doc in querySnapshot.docs) {
         batch.update(doc.reference, {'estado': estadoInt});
@@ -540,7 +591,7 @@ class Basededados {
           .collection('pedidos')
           .where('mesa', isEqualTo: idMesa.toString())
           .get();
-          
+
       final batch = FirebaseFirestore.instance.batch();
       for (final doc in querySnapshot.docs) {
         batch.delete(doc.reference);
@@ -550,4 +601,97 @@ class Basededados {
       debugPrint('Erro ao faturar mesa no Firestore: $e');
     }
   }
-}
+
+  Future<void> sincronizarEstadosPedidos(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        for (final doc in docs) {
+          final data = doc.data();
+          final String? mesaStr = data['mesa'];
+          final String? dataIso = data['data'];
+          final int estadoInt = data['estado'] ?? 0;
+          if (mesaStr == null || dataIso == null) continue;
+
+          final int idMesa = int.tryParse(mesaStr) ?? 0;
+          if (idMesa == 0) continue;
+
+          String estadoSql = 'pendente';
+          if (estadoInt == 1)
+            estadoSql = 'preparacao';
+          else if (estadoInt == 2)
+            estadoSql = 'pronto';
+          else if (estadoInt == 3)
+            estadoSql = 'entregue';
+
+          await txn.rawUpdate(
+            'UPDATE pedidos SET estado = ? WHERE id_mesa = ? AND data = ?',
+            [estadoSql, idMesa, dataIso],
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Erro ao sincronizar estados: $e');
+    }
+  }
+
+  Future<void> inserirPedidoDoFirestore({
+    required int idMesa,
+    required String produto,
+    required int quantidade,
+    required String dataIso,
+  }) async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        // Verificar se o pedido já existe (evita duplicados)
+        final existing = await txn.rawQuery(
+          'SELECT id FROM pedidos WHERE id_mesa = ? AND data = ?',
+          [idMesa, dataIso],
+        );
+
+        int idPedido;
+        if (existing.isEmpty) {
+          idPedido = await txn.rawInsert(
+            'INSERT INTO pedidos(id_mesa, estado, data) VALUES(?, ?, ?)',
+            [idMesa, 'pendente', dataIso],
+          );
+          // Marcar a mesa como ocupada
+          await txn.rawUpdate(
+            "UPDATE mesas SET estado = 'ocupada' WHERE id = ?",
+            [idMesa],
+          );
+        } else {
+          idPedido = existing.first['id'] as int;
+        }
+
+        // Encontrar o prato pelo nome
+        final pratos = await txn.rawQuery(
+          'SELECT id FROM pratos WHERE nome = ?',
+          [produto],
+        );
+
+        if (pratos.isNotEmpty) {
+          final idPrato = pratos.first['id'] as int;
+
+          // Verificar se o item já existe neste pedido
+          final itemExist = await txn.rawQuery(
+            'SELECT id FROM pedido_pratos WHERE id_pedido = ? AND id_prato = ?',
+            [idPedido, idPrato],
+          );
+
+          if (itemExist.isEmpty) {
+            await txn.rawInsert(
+              'INSERT INTO pedido_pratos(id_pedido, id_prato, quantidade) VALUES(?, ?, ?)',
+              [idPedido, idPrato, quantidade],
+            );
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Erro ao inserir pedido do Firestore: $e');
+    }
+  }
+}

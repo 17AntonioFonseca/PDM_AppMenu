@@ -25,7 +25,6 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
 
   Future<void> _inicializarCozinha() async {
     setState(() => _isLoading = true);
-    await Basededados().sincronizarComFirestore();
     await _carregarPedidos(mostrarSpinner: false);
     _escutarNovosPedidos();
   }
@@ -41,39 +40,45 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
         .collection('pedidos')
         .snapshots()
         .listen((snapshot) async {
-          // Sempre que houver alterações no Firestore, sincroniza
-          await Basededados().sincronizarComFirestore();
+          if (_snapshotInicialRecebido) {
+            for (final change in snapshot.docChanges) {
+              if (change.type != DocumentChangeType.added) continue;
+              final pedido = change.doc.data();
+              if (pedido == null || pedido['estado'] != 0) continue;
 
-          if (!_snapshotInicialRecebido) {
-            _snapshotInicialRecebido = true;
-            _carregarPedidos(mostrarSpinner: false);
-            return;
-          }
+              final quantidade = pedido['quantidade'] ?? 1;
+              final produto = pedido['produto'] ?? 'Produto';
+              final mesa = pedido['mesa'] ?? '?';
+              final dataIso =
+                  pedido['data'] ?? DateTime.now().toIso8601String();
+              final idMesa = int.tryParse(mesa) ?? 0;
 
-          for (final change in snapshot.docChanges) {
-            if (change.type != DocumentChangeType.added) continue;
+              // Insere no SQLite para aparecer na lista
+              if (idMesa > 0) {
+                await Basededados().inserirPedidoDoFirestore(
+                  idMesa: idMesa,
+                  produto: produto,
+                  quantidade: quantidade,
+                  dataIso: dataIso,
+                );
+              }
 
-            final pedido = change.doc.data();
-            if (pedido == null) continue;
-            if (pedido['estado'] != 0) continue; // Apenas SnackBar para novos pedidos pendentes
-
-            final quantidade = pedido['quantidade'] ?? '?';
-            final produto = pedido['produto'] ?? 'Produto';
-            final mesa = pedido['mesa'] ?? '?';
-
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'NOVO PEDIDO: ${quantidade}x $produto (Mesa $mesa)',
+              // SnackBar imediato
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'NOVO PEDIDO: ${quantidade}x $produto (Mesa $mesa)',
+                    ),
+                    backgroundColor: Colors.red[800],
+                    duration: const Duration(seconds: 4),
                   ),
-                  backgroundColor: Colors.red[800],
-                  duration: const Duration(seconds: 4),
-                ),
-              );
+                );
+              }
             }
           }
 
+          _snapshotInicialRecebido = true;
           _carregarPedidos(mostrarSpinner: false);
         });
   }
@@ -101,7 +106,7 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
 
     // 2. Atualizar no SQLite local
     await Basededados().atualizarEstadoPedido(idPedido, novoEstado);
-    
+
     // 3. Recarregar lista local
     _carregarPedidos(mostrarSpinner: false);
 
