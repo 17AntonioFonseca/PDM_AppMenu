@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'basededados.dart';
 import 'servidor.dart';
+import 'connectivity_indicator.dart';
 
 class ClienteScreen extends StatefulWidget {
   const ClienteScreen({super.key});
@@ -127,6 +128,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
           ],
         ),
         actions: [
+          const ConnectivityIndicator(),
           IconButton(
             icon: const Icon(Icons.receipt_long_outlined),
             onPressed: () => _mostrarEstadoPedidos(idMesa),

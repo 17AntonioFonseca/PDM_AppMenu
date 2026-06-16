@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'basededados.dart';
+import 'connectivity_indicator.dart';
 
 class EmpregadoScreen extends StatefulWidget {
   const EmpregadoScreen({super.key});
@@ -366,6 +367,7 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
         foregroundColor: Colors.white,
         title: const Text('Mesa & Mesa — Sala de Jantar'),
         actions: [
+          const ConnectivityIndicator(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Atualizar Sala',
@@ -385,7 +387,7 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 1.2,
+                  childAspectRatio: 0.95,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
@@ -407,6 +409,8 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                     child: Stack(
                       children: [
                         Container(
+                          width: double.infinity,
+                          height: double.infinity,
                           decoration: BoxDecoration(
                             color: corCard,
                             borderRadius: BorderRadius.circular(20),
@@ -439,16 +443,21 @@ class _EmpregadoScreenState extends State<EmpregadoScreen> {
                                   color: Colors.white,
                                 ),
                               ),
-                              Text(
-                                temPedidoPronto
-                                    ? 'Pronto a entregar!'
-                                    : isOcupada
-                                        ? 'Ocupada'
-                                        : 'Livre',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Text(
+                                  temPedidoPronto
+                                      ? 'Pronto a entregar!'
+                                      : isOcupada
+                                          ? 'Ocupada'
+                                          : 'Livre',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ],

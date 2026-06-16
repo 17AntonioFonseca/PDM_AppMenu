@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'basededados.dart';
+import 'connectivity_indicator.dart';
 
 class CozinhaScreen extends StatefulWidget {
   const CozinhaScreen({super.key});
@@ -132,6 +133,7 @@ class _CozinhaScreenState extends State<CozinhaScreen> {
           foregroundColor: Colors.white,
           title: const Text('Mesa & Mesa — Cozinha'),
           actions: [
+            const ConnectivityIndicator(),
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Atualizar',

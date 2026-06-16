@@ -5,6 +5,7 @@ import 'admin_gestao_ementa.dart';
 import 'admin_gestao_contas.dart';
 import 'admin_gestao_mesas.dart';
 import '../ficha10/shapref.dart'; // Importação da ficha 10
+import 'connectivity_indicator.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -125,6 +126,7 @@ class _AdminScreenState extends State<AdminScreen> {
         foregroundColor: Colors.white,
         title: const Text('Mesa & Mesa — Dashboard'),
         actions: [
+          const ConnectivityIndicator(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Atualizar Dados',
